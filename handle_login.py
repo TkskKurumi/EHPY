@@ -2,12 +2,12 @@ from os import path
 import requests
 try:
     from io_util import updatejson,dumpjson,loadjson
-    from request_wrapper import sess
+    from request_wrapper import sess,proxy
     from paths import *
 except Exception:
     from .paths import *
     from .io_util import updatejson,dumpjson,loadjson   
-    from .request_wrapper import sess
+    from .request_wrapper import sess,proxy
 
 if(not(path.exists(cookie_pth))):
     print('You have not logged in')
