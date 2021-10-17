@@ -9,7 +9,10 @@ def as_html(url_or_html):
     else:
         html=gettext(url_or_html)
     return html
-from parsers_gallery import gallery
+try:
+    from parsers_gallery import gallery,concat_gallery_url
+except Exception:
+    from .parsers_gallery import gallery,concat_gallery_url
 
 def parse_listing(url_or_html):
     html=as_html(url_or_html)

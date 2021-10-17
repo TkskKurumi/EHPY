@@ -32,6 +32,7 @@ if(__name__=='__main__'):
     def submit_gallery(gid,token):
         savedata('downloading','%s-%s'%(gid,token),'id',[gid,token])
         savedata('downloading','%s-%s'%(gid,token),'is_downloading',True)
+        savedata('downloading','%s-%s'%(gid,token),'url',parsers.concat_gallery_url(gid,token))
         def inner(gid,token):
             try:
                 g=parsers.gallery(gid,token)

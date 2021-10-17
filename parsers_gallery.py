@@ -70,6 +70,9 @@ class single_page(mydict):
             self.url=self.referer=url
         except Exception:
             traceback.print_exc()
+    def refresh(self):
+        sess.delete_url(url,proxies=proxy,method='GET')
+        self.__init__(self.url)
 class gallery_page(mydict):
     def __init__(self,url):
         super().__init__()
@@ -133,15 +136,19 @@ class gallery(mydict):
                     self.pages.append(_single_page)
         except Exception as e:
             traceback.print_exc()
-    def download_single_page(self,idx,pth):
+    def download_single_page(self,idx,pth,retries=3):
         print('downloading %s-%04d'%(self.title,idx))
         page=self.pages[idx]
         iurl=page.image_url
         referer=page.url
-        r=sess.get(iurl,headers={"Referer":referer,'referer':referer},proxies=proxy)
+        r=None
+        while((r is None)  or (not r.ok) and retries>0):
+            retries-=1
+            r=sess.get(iurl,headers={"Referer":referer,'referer':referer},proxies=proxy)
+            if(not r.ok):
+                page.refresh()
         if(not r.ok):
-            print(r.text)
-            exit()
+            return 'fail'
         cont_type=r.headers.get("Content-Type","png")
         
         ext='.png'
@@ -151,7 +158,7 @@ class gallery(mydict):
             elif(i.endswith('jpeg')):
                 ext='.jpg'
         
-        dst=path.join(pth,"%04d"%(idx+1)+ext)
+        dst=path.join(pth,"%s-%04d"%(self.gid,idx+1)+ext)
         savebin(dst,r.content)
         return dst
     def download_tasks(self,pth=None):
@@ -160,7 +167,7 @@ class gallery(mydict):
             title=title.replace('"',"'").replace("<","[").replace(">","]")
             for i in r'/\:*?|':
                 title=title.replace(i,"_")
-            pth=path.join(work_pth,'downloads',title)
+            pth=path.join(work_pth,'downloads','%s-%s'%(self.gid,title))
         tasks=[]
         for idx,_ in enumerate(self.pages):
             tasks.append(submit_thread(self.download_single_page,idx,pth))
