@@ -90,6 +90,14 @@ class gallery_page(mydict):
         except Exception as e:
             traceback.print_exc()
 class gallery(mydict):
+    def from_url(url):
+        pattern=r'(\d{3,})/([0-9a-f]+)/'
+        fall=re.findall(pattern,url)
+        if(fall):
+            gid,token=fall[0]
+            return gallery(gid,token)
+        else:
+            raise ValueError('Unknown gallery url')
     def __init__(self,gid,token):
         try:
             
