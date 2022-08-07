@@ -1,6 +1,8 @@
 import requests_cache
 import requests
 import re
+from glob import glob
+import shutil
 import traceback
 from os import path
 try:
@@ -11,7 +13,10 @@ try:
     from paths import work_pth, cache_pth
 except Exception:
     from .paths import work_pth, cache_pth
-
+try:
+    from misc import legalize_path
+except ImportError:
+    from .misc import legalize_path
 
 try:
     from handle_login import cookie_json
@@ -76,11 +81,45 @@ if(__name__ == '__main__'):
                 print('Downloading galleries')
                 for gid, token in find_gallery:
                     submit_gallery(gid, token)
-            elif(inp == 'exit'):
+            elif(inp in ['exit', "quit"]):
                 exit()
             elif(inp == 'show threads'):
                 from tpool import doing
                 print(doing)
+            elif(inp == "gen_hexo"):
+                gen_pth  = path.join(work_pth, "gen_hexo_posts")
+                galleries = getdata("galleries")
+                if(galleries):
+                    print("Dump to", gen_pth)
+                    if(path.exists(gen_pth)):
+                        print("Clean", gen_pth)
+                        shutil.rmtree(gen_pth)
+                    os.makedirs(gen_pth)
+                    for k, v in galleries.items():
+                        downloaded_pth = v["download_path"]
+                        title = v['title']
+                        title_jpn = v.get("title_jpn", title)
+                        print("Copy and generate for", title_jpn)
+                        basename = legalize_path(title, True).replace(" ", "-")
+                        basename = basename.replace("[", "-").replace("]","-")
+                        dst = path.join(gen_pth, basename)
+                        shutil.copytree(downloaded_pth, dst)
+                        with open(path.join(gen_pth, basename+".md"), "w", encoding='utf-8') as f:
+                            prt = lambda *args, **kwargs : print(*args, file=f, **kwargs)
+                            prt("---")
+                            prt("title:", title.replace("[", "(").replace("]", ")"))
+                            prt("---")
+                            prt("# ", title_jpn)
+                            
+                            lsdir = os.listdir(dst)
+                            for idx, file in enumerate(lsdir):
+                                prt("![](%s)"%file)
+                                if(idx == 0):
+                                    prt("<!--more-->")
+                        
+                    print("Done generating for hexo")
+                else:
+                    print("no galleries")
             else:
                 print("Unknown operation.")
         except Exception:

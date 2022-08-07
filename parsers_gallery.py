@@ -8,6 +8,7 @@ try:
     from tpool import thread_pool, submit_thread
     from paths import work_pth
     from io_util import *
+    from data import savedata
 except Exception:
     from .request_wrapper import *
     from .debug_util import *
@@ -15,7 +16,7 @@ except Exception:
     from .paths import work_pth
     from .io_util import *
     from .misc import dict_format
-
+    from .data import savedata
 
 def as_html(url_or_html):
     if(url_or_html.startswith("http")):
@@ -127,7 +128,7 @@ class gallery(mydict):
             super().__init__()
             self['gid'] = gid
             self['token'] = token
-
+            self["_id"] = "%s-%s"%(gid, token)
             url0 = concat_gallery_url(gid, token)
             html0 = gettext(url0)
 
@@ -168,6 +169,12 @@ class gallery(mydict):
                     self.pages_flat["image_urls"].append(iurl)
                     self.pages_flat["image_urls_original"].append(iurl_f)
                     self.pages.append(_single_page)
+            saved = dict()
+            for i in "gid _ids token title title_jpn".split():
+                if(i in self):
+                    saved[i]=self[i]
+            self.simple_info = saved
+            savedata("galleries", self._id, self.simple_info)
         except Exception as e:
             traceback.print_exc()
 
@@ -205,6 +212,8 @@ class gallery(mydict):
             for i in r'/\:*?|':
                 title = title.replace(i, "_")
             pth = path.join(work_pth, 'downloads', '%s-%s' % (self.gid, title))
+        self.simple_info['download_path'] = pth
+        savedata("galleries", self._id, self.simple_info)
         tasks = []
         for idx, _ in enumerate(self.pages):
             tasks.append(submit_thread(self.download_single_page, idx, pth))
