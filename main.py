@@ -1,5 +1,7 @@
 import requests_cache
-import requests,re,traceback
+import requests
+import re
+import traceback
 from os import path
 try:
     from io_util import updatejson, dumpjson, loadjson
@@ -9,7 +11,6 @@ try:
     from paths import work_pth, cache_pth
 except Exception:
     from .paths import work_pth, cache_pth
-
 
 
 try:
@@ -26,58 +27,61 @@ except Exception as e:
     from .request_wrapper import *
     from . import parsers
     from .data import *
-if(__name__=='__main__'):
+if(__name__ == '__main__'):
 
-    
-    def submit_gallery(gid,token):
-        savedata('downloading','%s-%s'%(gid,token),'id',[gid,token])
-        savedata('downloading','%s-%s'%(gid,token),'is_downloading',True)
-        savedata('downloading','%s-%s'%(gid,token),'url',parsers.concat_gallery_url(gid,token))
-        def inner(gid,token):
+    def submit_gallery(gid, token):
+        savedata('downloading', '%s-%s' % (gid, token), 'id', [gid, token])
+        savedata('downloading', '%s-%s' % (gid, token), 'is_downloading', True)
+        savedata('downloading', '%s-%s' % (gid, token), 'url',
+                 parsers.concat_gallery_url(gid, token))
+
+        def inner(gid, token):
             try:
-                g=parsers.gallery(gid,token)
+                g = parsers.gallery(gid, token)
             except Exception as e:
                 import traceback
                 traceback.print_exc()
                 raise e
-            
-            tasks=g.download_tasks()
-            print("submit %s"%g.title)
+
+            tasks = g.download_tasks()
+            print("submit %s" % g.title)
             for i in tasks:
                 try:
-                    result=i.result()
+                    result = i.result()
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
                     raise e
-                print("Downloaded",i.result())
-            savedata('downloading','%s-%s'%(gid,token),'is_downloading',False)
-        thread_pool.submit(inner,gid,token)
+                print("Downloaded", i.result())
+            savedata('downloading', '%s-%s' %
+                     (gid, token), 'is_downloading', False)
+        thread_pool.submit(inner, gid, token)
     try:
-        downloading=getdata('downloading') 
+        downloading = getdata('downloading')
     except Exception:
-        downloading={}
-    for _,i in downloading.items():
-        gid,token=i['id']
-        is_downloading=i['is_downloading']
+        downloading = {}
+    for _, i in downloading.items():
+        gid, token = i['id']
+        is_downloading = i['is_downloading']
         if(is_downloading):
-            submit_gallery(gid,token)
+            submit_gallery(gid, token)
     print("EHPY CLI")
     while(True):
         try:
-            inp=input()
-            
-            pattern_gallery=r'(\d{3,})/([0-9a-f]+)/'
-            find_gallery=re.findall(pattern_gallery,inp)
+            inp = input("> ")
+
+            pattern_gallery = r'(\d{3,})/([0-9a-f]+)/'
+            find_gallery = re.findall(pattern_gallery, inp)
             if(find_gallery):
                 print('Downloading galleries')
-                for gid,token in find_gallery:
-                    submit_gallery(gid,token)
-            if(inp=='exit'):
-            
+                for gid, token in find_gallery:
+                    submit_gallery(gid, token)
+            elif(inp == 'exit'):
                 exit()
-            if(inp=='show threads'):
+            elif(inp == 'show threads'):
                 from tpool import doing
                 print(doing)
+            else:
+                print("Unknown operation.")
         except Exception:
             traceback.print_exc()
